@@ -5,7 +5,7 @@
     @mouseleave="handleMouseLeave"
     @mousedown="onButtonDown"
     @touchstart.passive="onButtonDown"
-    :class="buttonClass"
+    :class="{ hover: hovering, dragging: dragging }"
     :style="wrapperStyle"
     ref="button"
     tabindex="0"
@@ -25,7 +25,10 @@
       <template v-slot:content>
         <span>{{ formatValue }}</span>
       </template>
-      <div class="el-slider__button" :class="buttonClass"></div>
+      <div
+        class="el-slider__button"
+        :class="{ hover: hovering, dragging: dragging }"
+      ></div>
     </el-tooltip>
   </div>
 </template>
@@ -123,7 +126,7 @@ export default {
       displayTooltip,
       hideTooltip
     )
-    const buttonClass = useButtonClasses(hovering, dragging)
+
     return {
       // data
       hovering,
@@ -158,19 +161,17 @@ export default {
       onLeftKeyDown,
       onRightKeyDown,
       // ref
-      tooltip,
-      // classs
-      buttonClass
+      tooltip
     }
   }
 }
 
-const useToolTip = (ctx) => {
-  const displayTooltip = () => {
+function useToolTip(ctx) {
+  function displayTooltip() {
     ctx.tooltip && (ctx.tooltip.showPopper = true)
   }
 
-  const hideTooltip = () => {
+  function hideTooltip() {
     ctx.tooltip && (ctx.tooltip.showPopper = false)
   }
   return {
@@ -179,21 +180,21 @@ const useToolTip = (ctx) => {
   }
 }
 
-const useMouseHover = (displayTooltip, hideTooltip) => {
+function useMouseHover(displayTooltip, hideTooltip) {
   const hovering = ref(false)
-  const handleMouseEnter = () => {
+  function handleMouseEnter() {
     hovering.value = true
     displayTooltip()
   }
 
-  const handleMouseLeave = () => {
+  function handleMouseLeave() {
     hovering.value = false
     hideTooltip()
   }
   return { hovering, handleMouseEnter, handleMouseLeave }
 }
 
-const useDragAndKeyDown = (
+function useDragAndKeyDown(
   parent,
   ctx,
   emit,
@@ -207,7 +208,7 @@ const useDragAndKeyDown = (
   currentPosition,
   displayTooltip,
   hideTooltip
-) => {
+) {
   const { resetSize, emitChange } = parent.ctx
 
   const dragging = ref(false)
@@ -236,7 +237,7 @@ const useDragAndKeyDown = (
     window.addEventListener('contextmenu', onDragEnd)
   }
 
-  const onDragStart = (event) => {
+  function onDragStart(event) {
     dragging.value = true
     isClick.value = true
     if (event.type === 'touchstart') {
@@ -252,7 +253,7 @@ const useDragAndKeyDown = (
     newPosition.value = unref(startPosition)
   }
 
-  const onDragging = (event) => {
+  function onDragging(event) {
     if (unref(dragging)) {
       isClick.value = false
       displayTooltip()
@@ -274,7 +275,7 @@ const useDragAndKeyDown = (
     }
   }
 
-  const onDragEnd = () => {
+  function onDragEnd() {
     if (unref(dragging)) {
       /*
        * 防止在 mouseup 后立即触发 click，导致滑块有几率产生一小段位移
@@ -301,7 +302,7 @@ const useDragAndKeyDown = (
   // eslint-disable-next-line
   //#region KeyDown methods: onLeftKeyDown, onRightKeyDown
 
-  const onLeftKeyDown = () => {
+  function onLeftKeyDown() {
     if (unref(disabled)) return
     newPosition.value =
       parseFloat(unref(currentPosition)) -
@@ -309,7 +310,7 @@ const useDragAndKeyDown = (
     setPosition(unref(newPosition))
     emitChange()
   }
-  const onRightKeyDown = () => {
+  function onRightKeyDown() {
     if (unref(disabled)) return
     newPosition.value =
       parseFloat(unref(currentPosition)) +
@@ -321,7 +322,7 @@ const useDragAndKeyDown = (
   // eslint-disable-next-line
   //#endregion
 
-  const setPosition = (newPosition) => {
+  function setPosition(newPosition) {
     if (newPosition === null || isNaN(newPosition)) return
     if (newPosition < 0) {
       newPosition = 0
@@ -364,7 +365,7 @@ const useDragAndKeyDown = (
   }
 }
 
-const useComputed = (modelValue, vertical) => {
+function useComputed(modelValue, vertical) {
   const { parent } = getCurrentInstance()
 
   const disabled = computed(() => parent.ctx.sliderDisabled)
@@ -402,10 +403,5 @@ const useComputed = (modelValue, vertical) => {
     formatValue,
     wrapperStyle
   }
-}
-const useButtonClasses = (hovering, dragging) => {
-  return computed(() => {
-    return [hovering.value ? 'hover' : '', dragging.value ? 'dragging' : '']
-  })
 }
 </script>
